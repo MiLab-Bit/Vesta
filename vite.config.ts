@@ -1,0 +1,15 @@
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+  base: '/vesta/',
+  server: {
+    port: 3001,
+    open: false,
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: true,
+  },
+})
