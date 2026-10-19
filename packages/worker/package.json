@@ -1,0 +1,22 @@
+{
+  "name": "@vesta/worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/worker.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@temporalio/worker": "^1.11.0",
+    "@temporalio/workflow": "^1.11.0",
+    "@temporalio/activity": "^1.11.0",
+    "@temporalio/client": "^1.11.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0",
+    "@types/node": "^20.14.0"
+  }
+}

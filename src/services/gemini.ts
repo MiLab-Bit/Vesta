@@ -2,12 +2,11 @@ import type {
   RadarScores, AiAnalysisResult, GeminiAnalysisPayload, ContributionHealth,
 } from '../types';
 import { computeAccountAge } from '../utils/formatters';
-import { consume } from './quota';
 
 const pick = <T,>(rows: [() => boolean, T][]): T => rows.find(([m]) => m())![1];
 
 const GEMINI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
-const DEFAULT_MODEL = 'gemini-2.0-flash';
+export const DEFAULT_MODEL = 'gemini-2.0-flash';
 
 interface GeminiResponse {
   radarScores: number[];
@@ -35,7 +34,7 @@ interface GeminiResponse {
 //   2. 设置配额/告警, 泄漏可即时发现;
 //   3. 中长期: 迁服务端代理(见 ROADMAP)。
 // 不配置 key 时走确定性启发式兜底(buildHeuristicAnalysis), 功能不瘫。
-async function geminiFetch(prompt: string, apiKey: string, model: string, maxRetries = 5): Promise<GeminiResponse> {
+export async function geminiFetch(prompt: string, apiKey: string, model: string, maxRetries = 5): Promise<GeminiResponse> {
   const url = `${GEMINI_BASE_URL}/${model}:generateContent?key=${apiKey}`;
   let delay = 1000;
 
@@ -55,7 +54,7 @@ async function geminiFetch(prompt: string, apiKey: string, model: string, maxRet
         throw new Error(`Gemini API ${response.status}: ${errBody}`);
       }
 
-      const result = await response.json();
+      const result = await response.json() as any;
       const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!text) throw new Error('Gemini returned empty text');
 
@@ -73,7 +72,7 @@ async function geminiFetch(prompt: string, apiKey: string, model: string, maxRet
   throw new Error('Gemini analysis failed after all retries');
 }
 
-function buildPrompt(d: GeminiAnalysisPayload): string {
+export function buildPrompt(d: GeminiAnalysisPayload): string {
   const { user, topRepos, langs, orgs, academic, activity, starAnalysis, domains, langBytes, codeCapability, graph, contributionHealth } = d;
 
   const repoContext = topRepos
@@ -184,29 +183,15 @@ function contributionHealthNote(h: ContributionHealth): string {
   return `组织健康：Elephant Factor ${h.elephantFactor}，Bus Factor ${h.busFactor}，纯单人仓库占比 ${Math.round(h.soloRatio * 100)}%。${h.note}`;
 }
 
-export async function analyzeWithGemini(
+export async function analyzeWithKey(
   payload: GeminiAnalysisPayload,
+  apiKey: string,
+  model: string = DEFAULT_MODEL,
   onError?: (msg: string) => void
 ): Promise<AiAnalysisResult> {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
-  const model = import.meta.env.VITE_GEMINI_MODEL || DEFAULT_MODEL;
-
-  // If no API key, use deterministic heuristic analysis as fallback
-  if (!apiKey) {
-    console.warn('[Vesta] No VITE_GEMINI_API_KEY found. Using deterministic heuristic analysis.');
-    return buildHeuristicAnalysis(payload);
-  }
-  // 配置了 key = 接受浏览器暴露模型; 见 geminiFetch 上方缓解清单。
-  console.warn('[Vesta] VITE_GEMINI_API_KEY is browser-visible. Ensure referrer restriction is set in Google AI Studio.');
-
-  if (!consume()) {
-    return { ...buildHeuristicAnalysis(payload), degraded: true };
-  }
-
   try {
     const prompt = buildPrompt(payload);
     const raw = await geminiFetch(prompt, apiKey, model);
-
     return {
       radarScores: mapRadarScores(raw.radarScores ?? [50, 50, 50, 50, 50]),
       aiInfluenceLevel: raw.aiInfluenceLevel ?? '社区贡献者',
@@ -233,7 +218,7 @@ export async function analyzeWithGemini(
   }
 }
 
-function buildHeuristicAnalysis(d: GeminiAnalysisPayload): AiAnalysisResult {
+export function buildHeuristicAnalysis(d: GeminiAnalysisPayload): AiAnalysisResult {
   const { user, topRepos, stats, langs, orgs, academic, activity, starAnalysis, domains, codeCapability, contributionHealth } = d;
   const topLangs = langs.slice(0, 5).map(l => l.name);
 

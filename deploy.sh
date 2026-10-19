@@ -14,10 +14,10 @@ echo "[1/6] git pull"
 git pull --ff-only
 
 echo "[2/6] 安装依赖"
-npm ci --registry=https://registry.npmmirror.com --no-audit --no-fund
+pnpm install --frozen-lockfile --registry=https://registry.npmmirror.com --no-audit --no-fund
 
 echo "[3/6] 构建(sourcemap 已在 vite.config.ts 关闭)"
-npm run build
+pnpm build
 
 echo "[4/6] 构建后校验"
 # 4a) 不允许 .map 出厂(2026-10: sourcemap 泄露事故)

@@ -28,3 +28,6 @@ dist
 .wrangler
 .env
 *.local
+
+# runtime quota db (server-side IP LLM quota)
+/data/
