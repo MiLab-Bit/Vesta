@@ -4,6 +4,8 @@ import type {
 import { computeAccountAge } from '../utils/formatters';
 import { consume } from './quota';
 
+const pick = <T,>(rows: [() => boolean, T][]): T => rows.find(([m]) => m())![1];
+
 const GEMINI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 const DEFAULT_MODEL = 'gemini-2.0-flash';
 
@@ -235,17 +237,19 @@ function buildHeuristicAnalysis(d: GeminiAnalysisPayload): AiAnalysisResult {
   const { user, topRepos, stats, langs, orgs, academic, activity, starAnalysis, domains, codeCapability, contributionHealth } = d;
   const topLangs = langs.slice(0, 5).map(l => l.name);
 
-  // Influence tier (deterministic)
-  let aiInfluenceLevel = 'B级 · 社区活跃贡献者';
-  if (user.followers > 5000 || stats.totalStars > 10000) aiInfluenceLevel = 'S级 · 顶级开源架构师';
-  else if (user.followers > 500 || stats.totalStars > 1000) aiInfluenceLevel = 'A级 · 资深开源贡献者';
-  else if (user.followers < 10 && stats.totalStars < 50) aiInfluenceLevel = 'D级 · 新晋开发者';
+  const aiInfluenceLevel = pick<string>([
+    [() => user.followers > 5000 || stats.totalStars > 10000, 'S级 · 顶级开源架构师'],
+    [() => user.followers > 500 || stats.totalStars > 1000, 'A级 · 资深开源贡献者'],
+    [() => user.followers < 10 && stats.totalStars < 50, 'D级 · 新晋开发者'],
+    [() => true, 'B级 · 社区活跃贡献者'],
+  ]);
 
-  // Tech level (deterministic)
-  let aiTechLevel = '全栈工程师';
-  if (topLangs.includes('Rust') || topLangs.includes('C') || topLangs.includes('C++')) aiTechLevel = '系统级开发工程师';
-  else if (topLangs.includes('Python') && stats.totalStars > 500) aiTechLevel = '算法 / AI 研究者';
-  else if (user.followers > 1000 && stats.totalStars > 5000) aiTechLevel = '顶级开源领袖';
+  const aiTechLevel = pick<string>([
+    [() => topLangs.includes('Rust') || topLangs.includes('C') || topLangs.includes('C++'), '系统级开发工程师'],
+    [() => topLangs.includes('Python') && stats.totalStars > 500, '算法 / AI 研究者'],
+    [() => user.followers > 1000 && stats.totalStars > 5000, '顶级开源领袖'],
+    [() => true, '全栈工程师'],
+  ]);
 
   const langStr = topLangs.slice(0, 3).join(' / ') || '多语言';
   const ageYears = computeAccountAge(user.created_at);
