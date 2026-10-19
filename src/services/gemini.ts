@@ -25,6 +25,13 @@ interface GeminiResponse {
   aiHealthNote: string;
 }
 
+// ⚠️ 浏览器端直调 Gemini: VITE_GEMINI_API_KEY 经 import.meta.env 打进
+// 前端 bundle, 且以 ?key= 查询串出现在网络请求里——任何访客在 DevTools
+// 可见。纯静态站无服务端代理前的缓解措施(运营侧必做):
+//   1. Google AI Studio 对该 key 设置 HTTP referrer 限制(仅 vesta.sy-realm.ltd);
+//   2. 设置配额/告警, 泄漏可即时发现;
+//   3. 中长期: 迁服务端代理(见 ROADMAP)。
+// 不配置 key 时走确定性启发式兜底(buildHeuristicAnalysis), 功能不瘫。
 async function geminiFetch(prompt: string, apiKey: string, model: string, maxRetries = 5): Promise<GeminiResponse> {
   const url = `${GEMINI_BASE_URL}/${model}:generateContent?key=${apiKey}`;
   let delay = 1000;
@@ -186,6 +193,8 @@ export async function analyzeWithGemini(
     console.warn('[Vesta] No VITE_GEMINI_API_KEY found. Using deterministic heuristic analysis.');
     return buildHeuristicAnalysis(payload);
   }
+  // 配置了 key = 接受浏览器暴露模型; 见 geminiFetch 上方缓解清单。
+  console.warn('[Vesta] VITE_GEMINI_API_KEY is browser-visible. Ensure referrer restriction is set in Google AI Studio.');
 
   try {
     const prompt = buildPrompt(payload);
