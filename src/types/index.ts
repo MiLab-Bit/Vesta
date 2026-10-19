@@ -77,6 +77,7 @@ export interface AiAnalysisResult {
   aiStarNote: string;               // Star 评估点评
   aiOrgNote: string;                // 组织归属点评
   aiHealthNote: string;            // 协作 / 组织健康点评（Bus / Elephant Factor）
+  degraded?: boolean;
 }
 
 // ==================== 深度分析类型（迹 Trace） ====================

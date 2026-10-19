@@ -24,6 +24,12 @@ export function AnalysisPanel({ aiResult }: AnalysisPanelProps) {
 
   return (
     <div className="space-y-6">
+      {aiResult.degraded && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-700 rounded-xl p-4 text-sm">
+          <i className="fa-solid fa-triangle-exclamation mr-2" />
+          今日 AI 额度已用完（每浏览器每日 3 次），已用本地启发式分析。
+        </div>
+      )}
       {/* AI Text Analysis */}
       <div className="bg-white rounded-2xl shadow-sm border border-neutral-100 p-6 space-y-4">
         <h3 className="text-lg font-bold text-neutral-800 mb-4">

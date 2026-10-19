@@ -2,6 +2,7 @@ import type {
   RadarScores, AiAnalysisResult, GeminiAnalysisPayload, ContributionHealth,
 } from '../types';
 import { computeAccountAge } from '../utils/formatters';
+import { consume } from './quota';
 
 const GEMINI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 const DEFAULT_MODEL = 'gemini-2.0-flash';
@@ -195,6 +196,10 @@ export async function analyzeWithGemini(
   }
   // 配置了 key = 接受浏览器暴露模型; 见 geminiFetch 上方缓解清单。
   console.warn('[Vesta] VITE_GEMINI_API_KEY is browser-visible. Ensure referrer restriction is set in Google AI Studio.');
+
+  if (!consume()) {
+    return { ...buildHeuristicAnalysis(payload), degraded: true };
+  }
 
   try {
     const prompt = buildPrompt(payload);
