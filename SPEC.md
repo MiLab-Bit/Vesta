@@ -121,7 +121,7 @@
 # GitHub Token（可选，提升 API 限速 60次/小时 → 5000次/小时）
 # 推荐：fine-grained PAT，仅授予 public repo 只读（Contents: Read-only）
 # 切勿将真实 Token 提交进仓库；使用 .env.local 并在 .gitignore 中忽略
-VITE_GITHUB_TOKEN=ghp_xxxx
+VITE_GITHUB_TOKEN=ghp_your_token_here
 
 # LLM API Key（可选，不填则使用启发式分析）
 VITE_GEMINI_API_KEY=xxxx

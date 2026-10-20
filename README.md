@@ -97,7 +97,7 @@ src/
 ```env
 # GitHub Token —— 使用 fine-grained PAT，最小权限即可（无需 full scope）
 # 将 API 限速从 60 次/小时 提升到 5000 次/小时
-VITE_GITHUB_TOKEN=github_pat_xxxxxxxxxxxxxxxx
+VITE_GITHUB_TOKEN=github_pat_your_token_here
 
 # Gemini API Key（不填则使用启发式分析）
 VITE_GEMINI_API_KEY=your_gemini_api_key
