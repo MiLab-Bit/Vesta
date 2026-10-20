@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { analyzeWithKey, buildHeuristicAnalysis } from '@web/services/gemini';
-import type { GeminiAnalysisPayload } from '@web/types';
+import { analyzeWithKey, buildHeuristicAnalysis } from './gemini';
+import type { GeminiAnalysisPayload } from '../types';
 
 function payload(): GeminiAnalysisPayload {
   return {

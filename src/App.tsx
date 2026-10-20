@@ -7,6 +7,7 @@ import { AbilityRadar, LanguageDoughnut, SkillTags, ScoreRing, LanguageBytesBar 
 import { AnalysisPanel } from './components/AnalysisPanel';
 import { ResumeView } from './components/ResumeView';
 import { LoadingOverlay } from './components/LoadingOverlay';
+import { ApiKeySettings } from './components/ApiKeySettings';
 
 function Dim({ label, v }: { label: string; v: number }) {
   const color = v >= 70 ? '#16a34a' : v >= 40 ? '#C9A24B' : '#94a3b8';
@@ -59,6 +60,7 @@ export default function App() {
               </span>
             </div>
             <div className="flex items-center space-x-4">
+              <ApiKeySettings />
               <div className="relative">
                 <input
                   type="text"

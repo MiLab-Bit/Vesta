@@ -25,7 +25,7 @@ import {
   fetchTopRepoContributorCounts,
   computeContributionHealth,
 } from '../services/github';
-import { analyzeRemote } from '../services/browser';
+import { analyze } from '../services/browser';
 import { computeAccountAge } from '../utils/formatters';
 
 interface UseHunterDataResult {
@@ -158,7 +158,7 @@ export function useHunterData() {
     }));
 
     // 组装 LLM / 启发式输入
-    const aiResult = await analyzeRemote({
+    const aiResult = await analyze({
       user, topRepos, stats, langs,
       orgs, academic, activity, starAnalysis, domains, langBytes, codeCapability,
       graph, contributionHealth,

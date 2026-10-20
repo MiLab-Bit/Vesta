@@ -78,6 +78,7 @@ export interface AiAnalysisResult {
   aiOrgNote: string;                // 组织归属点评
   aiHealthNote: string;            // 协作 / 组织健康点评（Bus / Elephant Factor）
   degraded?: boolean;
+  byok?: boolean;                  // 是否使用用户自带 Key 完成分析（false=未配置 Key 启发式兜底）
 }
 
 // ==================== 深度分析类型（迹 Trace） ====================

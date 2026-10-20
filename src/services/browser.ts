@@ -1,43 +1,30 @@
-import { analyzeWithKey, buildHeuristicAnalysis, DEFAULT_MODEL } from './gemini';
+import { analyzeWithKey, buildHeuristicAnalysis } from './gemini';
 import { consume } from './quota';
+import { getGeminiKey, getGeminiModel } from './byok';
 import type { GeminiAnalysisPayload, AiAnalysisResult } from '../types';
 
-export async function analyzeInBrowser(
+/**
+ * 浏览器端 BYOK 分析：读取用户 localStorage 中的 Gemini Key，浏览器直连 Gemini。
+ * 不再有任何服务端代理（无 /api/analyze BFF），平台零 LLM key 暴露面。
+ *
+ * 降级策略：
+ * - 未配置 Key          -> 确定性启发式兜底（degraded, byok=false）
+ * - 当日配额(3次)已耗尽 -> 确定性启发式兜底（degraded, byok=true）
+ * - Key 有效且配额充足  -> 调用 Gemini
+ */
+export async function analyze(
   payload: GeminiAnalysisPayload,
   onError?: (msg: string) => void
 ): Promise<AiAnalysisResult> {
-  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+  const apiKey = getGeminiKey();
   if (!apiKey) {
-    console.warn('[Vesta] No VITE_GEMINI_API_KEY found. Using deterministic heuristic analysis.');
-    return buildHeuristicAnalysis(payload);
+    console.info('[Vesta] 未配置 Gemini Key，使用确定性启发式分析兜底。');
+    return { ...buildHeuristicAnalysis(payload), degraded: true, byok: false };
   }
-  console.warn('[Vesta] VITE_GEMINI_API_KEY is browser-visible. Ensure referrer restriction is set in Google AI Studio.');
   if (!consume()) {
-    return { ...buildHeuristicAnalysis(payload), degraded: true };
+    console.warn('[Vesta] 今日 AI 配额已用完（每浏览器每日 3 次），使用启发式兜底。');
+    return { ...buildHeuristicAnalysis(payload), degraded: true, byok: true };
   }
-  return analyzeWithKey(payload, apiKey, import.meta.env.VITE_GEMINI_MODEL || DEFAULT_MODEL, onError);
-}
-
-export async function analyzeRemote(
-  payload: GeminiAnalysisPayload,
-  onError?: (msg: string) => void
-): Promise<AiAnalysisResult> {
-  try {
-    const res = await fetch('/api/analyze', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    if (res.ok || res.status === 429) {
-      const data = await res.json();
-      if (data && typeof data === 'object' && typeof (data as AiAnalysisResult).radarScores === 'object') {
-        return data as AiAnalysisResult;
-      }
-      return { ...buildHeuristicAnalysis(payload), degraded: true };
-    }
-    throw new Error('analyze api ' + res.status);
-  } catch (e) {
-    console.warn('[Vesta] /api/analyze unavailable, falling back to browser analysis:', e);
-    return analyzeInBrowser(payload, onError);
-  }
+  // 已使用用户自带 Key 调 Gemini；失败时 analyzeWithKey 内部回退启发式（degraded 已置位）
+  return { ...(await analyzeWithKey(payload, apiKey, getGeminiModel(), onError)), byok: true };
 }

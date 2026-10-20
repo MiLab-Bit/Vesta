@@ -27,13 +27,10 @@ interface GeminiResponse {
   aiHealthNote: string;
 }
 
-// ⚠️ 浏览器端直调 Gemini: VITE_GEMINI_API_KEY 经 import.meta.env 打进
-// 前端 bundle, 且以 ?key= 查询串出现在网络请求里——任何访客在 DevTools
-// 可见。纯静态站无服务端代理前的缓解措施(运营侧必做):
-//   1. Google AI Studio 对该 key 设置 HTTP referrer 限制(仅 vesta.sy-realm.ltd);
-//   2. 设置配额/告警, 泄漏可即时发现;
-//   3. 中长期: 迁服务端代理(见 ROADMAP)。
-// 不配置 key 时走确定性启发式兜底(buildHeuristicAnalysis), 功能不瘫。
+// 浏览器端 BYOK 直调 Gemini: Key 来自用户 localStorage（见 services/byok.ts），
+// 经 ?key= 查询串出现在网络请求里——故 Key 必须是「用户自己申请的」，
+// 平台侧不持有、不分发任何 LLM key，也不提供代理端点（BFF 已移除）。
+// 无 Key 或当日配额耗尽时走确定性启发式兜底(buildHeuristicAnalysis)，功能不瘫。
 export async function geminiFetch(prompt: string, apiKey: string, model: string, maxRetries = 5): Promise<GeminiResponse> {
   const url = `${GEMINI_BASE_URL}/${model}:generateContent?key=${apiKey}`;
   let delay = 1000;
@@ -214,7 +211,7 @@ export async function analyzeWithKey(
     const msg = `Gemini 推理失败: ${e instanceof Error ? e.message : String(e)}`;
     console.error(msg);
     onError?.(msg);
-    return buildHeuristicAnalysis(payload);
+    return { ...buildHeuristicAnalysis(payload), degraded: true };
   }
 }
 

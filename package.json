@@ -10,9 +10,7 @@
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "format": "prettier --write src",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "api": "pnpm --filter @vesta/api start",
-    "worker": "pnpm --filter @vesta/worker start"
+    "test:watch": "vitest"
   },
   "dependencies": {
     "react": "^18.3.1",
