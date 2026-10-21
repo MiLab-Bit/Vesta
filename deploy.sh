@@ -14,7 +14,7 @@ echo "[1/6] git pull"
 git pull --ff-only
 
 echo "[2/6] 安装依赖"
-pnpm install --frozen-lockfile --registry=https://registry.npmmirror.com --no-audit --no-fund
+pnpm install --frozen-lockfile --registry=https://registry.npmmirror.com
 
 echo "[3/6] 构建(sourcemap 已在 vite.config.ts 关闭)"
 pnpm build
