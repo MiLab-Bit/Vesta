@@ -10,8 +10,9 @@
     <meta property="og:description" content="输入任意 GitHub 用户名，Vesta 读取其数字足迹，发现隐藏在代码背后的创造者。" />
     <meta property="og:type" content="website" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <!-- FontAwesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <!-- FontAwesome 自托管（2026-10-21：原 cdnjs 外链在不可达时会挂起样式表请求，
+         阻塞 module 脚本执行导致整站白屏；国内访问亦有跨境风险。类名不变，组件零改动） -->
+    <link rel="stylesheet" href="/fontawesome/all.min.css" />
   </head>
   <body>
     <div id="root"></div>
