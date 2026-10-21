@@ -43,7 +43,7 @@ export function RepoItem({ repo, rank }: { repo: GitHubRepo; rank: number }) {
 
       <p className="text-sm font-medium text-neutral-600 mb-2">
         {repo.language && (
-          <span className="px-1.5 py-0.5 bg-neutral-100 text-xs rounded mr-2 border">
+          <span className="px-1.5 py-0.5 bg-neutral-100 text-xs rounded mr-2 border border-neutral-200">
             {repo.language}
           </span>
         )}
