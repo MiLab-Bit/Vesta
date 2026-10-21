@@ -66,7 +66,7 @@ export function ResumeView({ user, bestRepos, langs, aiResult, academic, orgs = 
                   </div>
                   <p className="text-sm font-medium text-neutral-600 mb-1">
                     {repo.language && (
-                      <span className="px-1.5 py-0.5 bg-neutral-100 text-xs rounded mr-2 border">{repo.language}</span>
+                      <span className="px-1.5 py-0.5 bg-neutral-100 text-xs rounded mr-2 border border-neutral-200">{repo.language}</span>
                     )}
                     <span className="text-yellow-600 text-xs">
                       <i className="fa-solid fa-star"></i> {repo.stargazers_count}
