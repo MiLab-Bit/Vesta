@@ -15,11 +15,9 @@ export function UserCard({ user, stats, academic, orgs = [] }: UserCardProps) {
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-neutral-100 p-6 text-center relative overflow-hidden">
-      {/* Top gradient bar */}
       <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-r from-brand-500 to-indigo-500 opacity-10" />
 
       <div className="relative z-10">
-        {/* Avatar */}
         <div className="w-24 h-24 mx-auto rounded-full border-4 border-white shadow-md overflow-hidden mb-4 bg-white">
           <img
             src={user.avatar_url}
@@ -28,7 +26,6 @@ export function UserCard({ user, stats, academic, orgs = [] }: UserCardProps) {
           />
         </div>
 
-        {/* Identity */}
         <h2 className="text-2xl font-bold text-neutral-900 line-clamp-1">
           {user.name || user.login}
         </h2>
@@ -37,7 +34,6 @@ export function UserCard({ user, stats, academic, orgs = [] }: UserCardProps) {
           {user.bio || 'No bio provided.'}
         </p>
 
-        {/* Location / Company / Academic tags */}
         <div className="flex flex-wrap justify-center gap-2 mb-4">
           {user.location && (
             <span className="px-2 py-1 bg-neutral-100 text-neutral-600 text-xs rounded-md">
@@ -59,7 +55,6 @@ export function UserCard({ user, stats, academic, orgs = [] }: UserCardProps) {
           )}
         </div>
 
-        {/* Org chips */}
         {orgs.length > 0 && (
           <div className="flex flex-wrap justify-center gap-1.5 mb-4">
             {orgs.slice(0, 4).map(o => (
@@ -81,7 +76,6 @@ export function UserCard({ user, stats, academic, orgs = [] }: UserCardProps) {
           </div>
         )}
 
-        {/* Stats grid */}
         <div className="grid grid-cols-2 gap-4 text-left border-t border-neutral-100 pt-4">
           <StatItem
             label="Total Stars"
@@ -93,7 +87,6 @@ export function UserCard({ user, stats, academic, orgs = [] }: UserCardProps) {
           <StatItem label="Acct Age" value={`${ageYears} Y`} />
         </div>
 
-        {/* Social links */}
         <div className="border-t border-neutral-100 pt-4 mt-4">
           <div className="space-y-2 text-left">
             <SocialLink

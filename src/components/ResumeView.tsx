@@ -17,7 +17,6 @@ export function ResumeView({ user, bestRepos, langs, aiResult, academic, orgs = 
 
   return (
     <div className="bg-white p-8 rounded-2xl shadow-sm border border-neutral-200">
-      {/* Print header */}
       <header className="border-b-2 border-neutral-800 pb-4 mb-6">
         <div className="flex justify-between items-end">
           <div>
@@ -46,7 +45,6 @@ export function ResumeView({ user, bestRepos, langs, aiResult, academic, orgs = 
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-        {/* Left: repos */}
         <div className="md:col-span-8 space-y-6">
           <section>
             <h2 className="text-lg font-bold text-neutral-800 uppercase tracking-wide mb-4 flex items-center">
@@ -82,9 +80,7 @@ export function ResumeView({ user, bestRepos, langs, aiResult, academic, orgs = 
           </section>
         </div>
 
-        {/* Right: AI summary + skills */}
         <div className="md:col-span-4 space-y-6">
-          {/* AI Summary */}
           <section className="bg-indigo-50 p-5 rounded-lg border border-indigo-100">
             <h2 className="text-xs font-bold text-indigo-800 uppercase tracking-wide mb-3 flex items-center border-b border-indigo-200 pb-2">
               <i className="fa-solid fa-wand-magic-sparkles mr-1"></i>
@@ -95,7 +91,6 @@ export function ResumeView({ user, bestRepos, langs, aiResult, academic, orgs = 
             </p>
           </section>
 
-          {/* Skills */}
           <section>
             <h2 className="text-lg font-bold text-neutral-800 uppercase tracking-wide mb-3 flex items-center border-b border-neutral-200 pb-2">
               <i className="fa-solid fa-code mr-2"></i>
@@ -133,7 +128,6 @@ export function ResumeView({ user, bestRepos, langs, aiResult, academic, orgs = 
             </div>
           </section>
 
-          {/* Academic & Org */}
           <section className="border-t border-neutral-200 pt-4">
             <h2 className="text-xs font-bold text-neutral-500 uppercase tracking-wide mb-3">学术 / 组织</h2>
             <div className="space-y-3">

@@ -17,7 +17,7 @@ function read(store: Storage, now: Date): Rec {
         return { date, n: Math.max(0, Math.floor(v.n)) };
       }
     }
-  } catch { /* corrupt -> reset */ }
+  } catch {  }
   return { date, n: 0 };
 }
 
@@ -28,6 +28,6 @@ export function remaining(store: Storage = localStorage, now: Date = new Date())
 export function consume(store: Storage = localStorage, now: Date = new Date()): boolean {
   const v = read(store, now);
   if (v.n >= QUOTA_LIMIT) return false;
-  try { store.setItem(KEY, JSON.stringify({ date: v.date, n: v.n + 1 })); } catch { /* ignore */ }
+  try { store.setItem(KEY, JSON.stringify({ date: v.date, n: v.n + 1 })); } catch {  }
   return true;
 }

@@ -30,7 +30,6 @@ export function AnalysisPanel({ aiResult }: AnalysisPanelProps) {
           今日 AI 额度已用完（每浏览器每日 3 次），已用本地启发式分析。
         </div>
       )}
-      {/* AI Text Analysis */}
       <div className="bg-white rounded-2xl shadow-sm border border-neutral-100 p-6 space-y-4">
         <h3 className="text-lg font-bold text-neutral-800 mb-4">
           <i className="fa-solid fa-robot text-blue-500 mr-2" />
@@ -60,7 +59,6 @@ export function AnalysisPanel({ aiResult }: AnalysisPanelProps) {
         </div>
       </div>
 
-      {/* Directions / 技术方向 */}
       <div className="bg-white rounded-2xl shadow-sm border border-neutral-100 p-6">
         <h3 className="text-md font-bold text-neutral-800 mb-3">
           <i className="fa-solid fa-compass text-gold-500 mr-2" />
@@ -84,7 +82,6 @@ export function AnalysisPanel({ aiResult }: AnalysisPanelProps) {
         </div>
       </div>
 
-      {/* Deep notes grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <NoteCard icon="fa-solid fa-microchip" title="代码能力" body={aiCodeCapabilityNote} />
         <NoteCard icon="fa-solid fa-fire" title="活跃热度" body={aiHeatNote} />
@@ -99,7 +96,6 @@ export function AnalysisPanel({ aiResult }: AnalysisPanelProps) {
         />
       </div>
 
-      {/* Recruiter recommendation banner */}
       <div className="bg-gradient-to-br from-indigo-900 to-neutral-900 rounded-2xl shadow-sm border border-neutral-700 p-6 text-white relative overflow-hidden">
         <div className="absolute -right-4 -bottom-4 opacity-10 text-9xl">
           <i className="fa-solid fa-user-astronaut" />

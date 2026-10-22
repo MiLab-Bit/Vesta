@@ -17,12 +17,10 @@ export function LoadingOverlay({ progress, visible }: LoadingOverlayProps) {
       )}
     >
       <div className="relative w-20 h-20 mb-6 flex items-center justify-center">
-        {/* Outer slow spin */}
         <i
           className="fa-brands fa-google text-blue-500 text-3xl absolute animate-spin"
           style={{ animationDuration: '3s' }}
         />
-        {/* Inner brain */}
         <i className="fa-solid fa-brain text-brand-600 text-5xl absolute" />
       </div>
 

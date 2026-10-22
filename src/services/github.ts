@@ -6,9 +6,8 @@ import type {
 
 const BASE_URL = 'https://api.github.com';
 const CACHE_PREFIX = 'hh_cache_';
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL_MS = 5 * 60 * 1000; 
 
-// ==================== Cache ====================
 
 function getCache<T>(key: string): T | null {
   try {
@@ -32,11 +31,9 @@ function setCache<T>(key: string, data: T): void {
       timestamp: Date.now(),
     }));
   } catch {
-    // localStorage unavailable
   }
 }
 
-// ==================== Core Fetch ====================
 
 async function githubFetch<T>(path: string, cacheKey: string): Promise<{ data: T | null; status: 'success' | 'error' | 'rate_limited' | 'not_found' }> {
   const cached = getCache<T>(cacheKey);
@@ -47,7 +44,6 @@ async function githubFetch<T>(path: string, cacheKey: string): Promise<{ data: T
     'User-Agent': 'GitHunter-v1',
   };
 
-  // Allow user-provided token for higher rate limits
   const token = import.meta.env.VITE_GITHUB_TOKEN;
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
@@ -66,7 +62,6 @@ async function githubFetch<T>(path: string, cacheKey: string): Promise<{ data: T
   }
 }
 
-// ==================== Public API ====================
 
 export async function fetchGitHubUser(username: string): Promise<FetchUserResult> {
   const result = await githubFetch<GitHubUser>(`/users/${username}`, `user_${username}`);
@@ -101,7 +96,6 @@ export async function fetchGitHubRepos(username: string): Promise<FetchReposResu
   return { repos: result.data || [], status: 'success' };
 }
 
-// ==================== Stats Computation ====================
 
 export function computeRepoStats(repos: GitHubRepo[]): RepoStats {
   const ownRepos = repos.filter(r => !r.fork);
@@ -149,7 +143,6 @@ export function computeBestRepos(repos: GitHubRepo[], limit = 4): GitHubRepo[] {
   return computeTopRepos(repos, limit);
 }
 
-// ==================== New Endpoints (迹 Trace depth) ====================
 
 interface GitHubEventPayload {
   size?: number;
@@ -172,7 +165,6 @@ interface OrgApi {
   html_url: string;
 }
 
-// 用户公开事件（活跃热度）
 export async function fetchUserEvents(username: string): Promise<GitHubEvent[]> {
   const result = await githubFetch<GitHubEvent[]>(
     `/users/${username}/events/public?per_page=100`,
@@ -181,7 +173,6 @@ export async function fetchUserEvents(username: string): Promise<GitHubEvent[]> 
   return result.status === 'success' && result.data ? result.data : [];
 }
 
-// 用户所属组织
 export async function fetchUserOrgs(username: string): Promise<OrgInfo[]> {
   const result = await githubFetch<OrgApi[]>(`/users/${username}/orgs?per_page=100`, `orgs_${username}`);
   if (result.status !== 'success' || !result.data) return [];
@@ -193,7 +184,6 @@ export async function fetchUserOrgs(username: string): Promise<OrgInfo[]> {
   }));
 }
 
-// 用户 star 过的仓库（技术品味 / 方向）
 export async function fetchUserStarred(username: string): Promise<GitHubRepo[]> {
   const result = await githubFetch<GitHubRepo[]>(
     `/users/${username}/starred?per_page=100&sort=updated`,
@@ -202,7 +192,6 @@ export async function fetchUserStarred(username: string): Promise<GitHubRepo[]> 
   return result.status === 'success' && result.data ? result.data : [];
 }
 
-// 单个仓库的字节级语言分布
 async function fetchRepoLanguages(owner: string, repo: string): Promise<Record<string, number>> {
   const result = await githubFetch<Record<string, number>>(
     `/repos/${owner}/${repo}/languages`,
@@ -211,7 +200,6 @@ async function fetchRepoLanguages(owner: string, repo: string): Promise<Record<s
   return result.status === 'success' && result.data ? result.data : {};
 }
 
-// Top 仓库按字节聚合的语言分布（比 repo 单一 language 字段更深）
 export async function fetchTopRepoLanguages(username: string, repos: GitHubRepo[]): Promise<LanguageStat[]> {
   const top = repos.filter(r => !r.fork).sort((a, b) => b.stargazers_count - a.stargazers_count).slice(0, 8);
   const map: Record<string, number> = {};
@@ -225,9 +213,6 @@ export async function fetchTopRepoLanguages(username: string, repos: GitHubRepo[
     .sort((a, b) => b.count - a.count);
 }
 
-// ==================== GraphQL（精确贡献分布） ====================
-// GitHub GraphQL 需要鉴权，统一读 VITE_GITHUB_TOKEN。无 token 时优雅降级（返回 null），
-// 上层据此回退到公开事件估计，保证未配置 token 的应用仍可运行。
 
 const GQL_URL = 'https://api.github.com/graphql';
 
@@ -249,7 +234,6 @@ async function postGraphQL<T>(query: string, variables: Record<string, unknown>,
       },
       body: JSON.stringify({ query, variables }),
     });
-    // 401 无 token / 403 速率限制 → 降级
     if (response.status === 401 || response.status === 403) return null;
     if (!response.ok) return null;
 
@@ -281,7 +265,6 @@ interface GraphQLContribResponse {
   } | null;
 }
 
-// 精确贡献（近 1 年滚动窗口）。窗口上限为 1 年（GitHub 限制）。
 export async function fetchGraphContributions(login: string): Promise<GraphContributions> {
   const to = new Date();
   const from = new Date(to.getTime() - 365 * DAY_MS);
@@ -333,7 +316,6 @@ export async function fetchGraphContributions(login: string): Promise<GraphContr
   };
 }
 
-// 单个仓库贡献者总数（通过 Link 头 last 页码读取，避免拉全量）。
 async function fetchRepoContributorCount(owner: string, repo: string): Promise<number | null> {
   const cacheKey = `contrib_${owner}_${repo}`;
   const cached = getCache<number>(cacheKey);
@@ -358,7 +340,6 @@ async function fetchRepoContributorCount(owner: string, repo: string): Promise<n
         return total;
       }
     }
-    // 无 Link 头：返回条数（≤1）
     const arr = (await res.json()) as unknown[];
     const total = Array.isArray(arr) ? arr.length : 0;
     setCache(cacheKey, total);
@@ -368,7 +349,6 @@ async function fetchRepoContributorCount(owner: string, repo: string): Promise<n
   }
 }
 
-// 头部非 fork 仓库的贡献者数（用于 Bus Factor）。
 export async function fetchTopRepoContributorCounts(
   repos: GitHubRepo[],
   ownerLogin: string
@@ -390,11 +370,6 @@ export async function fetchTopRepoContributorCounts(
   return results;
 }
 
-// 协作 / 组织健康（CHAOSS Bus Factor / Elephant Factor）。
-//  - Elephant Factor：提交量累计达 50% 所需仓库数（越小越集中于少数仓库）。
-//  - Concentration：提交分布的 Gini 系数化指标（0 均匀，1 全集中一处）。
-//  - Bus Factor：头部仓库贡献者中位数（高=团队维护、抗关键人风险；1=纯单人）。
-//  - soloRatio：头部仓库中仅作者一人的占比。
 export function computeContributionHealth(
   graph: GraphContributions,
   repoContributors: { name: string; contributors: number; isFork: boolean; stars: number }[]
@@ -405,7 +380,6 @@ export function computeContributionHealth(
   };
   if (!graph.available) return empty;
 
-  // Elephant Factor + Concentration（基于逐仓 commit 分布）
   const dist = graph.perRepoCommits.filter(r => !r.isFork).map(r => r.commits).sort((a, b) => b - a);
   const total = dist.reduce((s, v) => s + v, 0);
   let elephantFactor = 0;
@@ -427,7 +401,6 @@ export function computeContributionHealth(
     concentration = sumDiff / (2 * n * mean);
   }
 
-  // Bus Factor（基于头部仓库贡献者数）
   const withData = repoContributors.filter(r => r.contributors > 0);
   let busFactor = 0;
   let soloRatio = 0;
@@ -460,7 +433,6 @@ export function computeContributionHealth(
   };
 }
 
-// ==================== New Computations ====================
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -589,7 +561,7 @@ export function computeDomainClusters(repos: GitHubRepo[], starred: GitHubRepo[]
       if (hits > 0) {
         const cur = weights[domain] || { weight: 0, repos: 0 };
         cur.weight += hits * factor;
-        cur.repos += factor; // 计数按仓库数（factor=1 或 0.5）
+        cur.repos += factor; 
         weights[domain] = cur;
       }
     }
@@ -605,7 +577,6 @@ export function computeDomainClusters(repos: GitHubRepo[], starred: GitHubRepo[]
     .slice(0, 6);
 }
 
-// 从公开事件中提取真实贡献信号（CHAOSS Contribution 度量）
 export function computeContributionSignals(events: GitHubEvent[], orgs: OrgInfo[]): ContributionSignals {
   let commits = 0;
   let prsAuthored = 0;
@@ -650,13 +621,6 @@ export function computeContributionSignals(events: GitHubEvent[], orgs: OrgInfo[
   };
 }
 
-// 代码能力五维（CHAOSS / SPACE 框架）。
-// 关键方法学修正：
-//  - 废弃「语言占比 ≈ 能力」的刻板代理，改为基于真实贡献信号（commit / PR / 评论 / Review）。
-//  - 优先采用 GitHub GraphQL 的精确贡献计数（近 1 年全量），缺失时回退公开事件估计。
-//  - Bus Factor（头部仓库团队化程度）并入协作维度。
-//  - influence（Star + 关注者）仅作为「触达 / 结果」信号，不计入能力综合分 overall，
-//    遵循 SPACE：产出结果 ≠ 个人能力（避免病毒式玩具仓库虚高）。
 export function computeCodeCapability(
   repos: GitHubRepo[],
   langBytes: LanguageStat[],
@@ -672,13 +636,11 @@ export function computeCodeCapability(
   const substantial = own.filter(r => r.stargazers_count >= 5 || r.forks_count >= 3).length;
   const distinctLangs = langBytes.length;
 
-  // 精确信号优先：GraphQL 全量计数 > 公开事件估计
   const commits = graph?.available ? graph.totalCommits : signals.commits;
   const prs = graph?.available ? graph.totalPRs : signals.prsAuthored;
   const reviews = graph?.available ? graph.totalReviews : signals.reviews;
   const issues = graph?.available ? graph.totalIssues : signals.issuesAuthored;
 
-  // 代码深度：实质产出 = 精确 commit 量 + 发起 PR + 有影响力自有仓库 + 近期活跃
   const depth = clamp(
     18
     + Math.min(commits / 200, 1) * 42
@@ -688,13 +650,11 @@ export function computeCodeCapability(
     0, 100
   );
 
-  // 技术广度：语言 / 生态多样性 + 作品组合规模
   const breadth = clamp(
     Math.min(distinctLangs / 10, 1) * 60 + Math.min(own.length / 15, 1) * 40,
     0, 100
   );
 
-  // 影响力 / 触达：Star + 关注者（结果信号，仅展示，不进 overall）
   const influence = clamp(
     Math.log10(stats.totalStars + 1) * 22
     + Math.log10(user.followers + 1) * 18
@@ -702,8 +662,6 @@ export function computeCodeCapability(
     0, 100
   );
 
-  // 协作 / 沟通（SPACE C + CHAOSS Contribution）：
-  //  Review、评论、PR/Issue、组织归属，以及头部仓库的 Bus Factor（团队化）
   const bus = contributionHealth?.available ? contributionHealth.busFactor : 1;
   const collaboration = clamp(
     20
@@ -715,13 +673,11 @@ export function computeCodeCapability(
     0, 100
   );
 
-  // 持续度（SPACE Activity + CHAOSS Release Frequency 思路）：近期热度 + 账号稳健
   const sustainability = clamp(
     activity.heatScore * 0.62 + Math.min(accountAgeYears / 5, 1) * 38,
     0, 100
   );
 
-  // 能力综合分不含 influence（SPACE：结果 ≠ 能力）
   const overall = Math.round((depth + breadth + collaboration + sustainability) / 4);
 
   return {

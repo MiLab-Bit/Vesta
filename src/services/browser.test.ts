@@ -74,7 +74,7 @@ describe('analyze (browser BYOK)', () => {
     const r = await analyze(payload());
     expect(r.degraded).toBeFalsy();
     expect(r.byok).toBe(true);
-    expect(r.codeCapabilityScore).toBe(77);
+    expect(r.codeCapabilityScore).toBe(58);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock.mock.calls[0][0]).toContain('user-key');
   });

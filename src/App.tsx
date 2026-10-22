@@ -2,25 +2,14 @@ import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate, NavLink } from 'react-router';
 import type { ActiveTab, LoadingProgress } from './types';
 import { useHunterData } from './hooks/useHunterData';
-import { isValidGitHubUsername, cn, formatNumber } from './utils/helpers';
+import { isValidGitHubUsername, cn } from './utils/helpers';
 import { UserCard } from './components/UserCard';
-import { AbilityRadar, LanguageDoughnut, SkillTags, ScoreRing, LanguageBytesBar } from './components/AnalyticsCharts';
-import { AnalysisPanel } from './components/AnalysisPanel';
 import { ResumeView } from './components/ResumeView';
 import { LoadingOverlay } from './components/LoadingOverlay';
 import { ApiKeySettings } from './components/ApiKeySettings';
+import { OverviewTab } from './components/OverviewTab';
+import { TechTab } from './components/TechTab';
 
-function Dim({ label, v }: { label: string; v: number }) {
-  const color = v >= 70 ? '#16a34a' : v >= 40 ? '#C9A24B' : '#94a3b8';
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-neutral-500">{label}</span>
-      <span className="font-semibold" style={{ color }}>{v}</span>
-    </div>
-  );
-}
-
-// 路由段 ↔ tab 键映射（HashRouter，GitHub Pages 约束，决策记录见 vesta-redesign.md 5.2）
 const SEG_TO_TAB: Record<string, ActiveTab> = { analysis: 'overview', repos: 'tech', resume: 'resume' };
 const TAB_TO_SEG: Record<ActiveTab, string> = { overview: 'analysis', tech: 'repos', resume: 'resume' };
 
@@ -31,7 +20,6 @@ export default function App() {
   const [username, setUsername] = useState('yyx990803');
   const searchedRef = useRef<string | null>(null);
 
-  // 路径派生：/u/:username/:tab —— username 与 activeTab 归路由而非 state
   const userMatch = location.pathname.match(/^\/u\/([^/]+)(?:\/([^/]+))?/);
   const rawUser = userMatch?.[1];
   const tabSeg = userMatch?.[2];
@@ -42,21 +30,17 @@ export default function App() {
   const activeTab: ActiveTab = (tabSeg && SEG_TO_TAB[tabSeg]) || 'overview';
   const onSettings = location.pathname === '/settings';
 
-  // URL 归一：/u/:username（bare）与未知 tab 段 → /u/:username/analysis
   useEffect(() => {
     if (!userMatch || !rawUser) return;
     if (!tabSeg || !SEG_TO_TAB[tabSeg]) {
       navigate(`/u/${encodeURIComponent(rawUser)}/analysis`, { replace: true });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
-  // 输入框跟随路由用户名
   useEffect(() => {
     if (routeUser) setUsername(routeUser);
   }, [routeUser]);
 
-  // 路由用户名变化 → 触发检索（深链接 / 分享链接直达可用；in-flight 中不重入）
   useEffect(() => {
     if (!routeUser) return;
     const key = routeUser.toLowerCase();
@@ -64,7 +48,6 @@ export default function App() {
     if (hunter.status === 'loading' || hunter.status === 'analyzing') return;
     searchedRef.current = key;
     hunter.search(routeUser);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [routeUser, hunter.status]);
 
   const loadingProgress: LoadingProgress = (() => {
@@ -86,13 +69,11 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-neutral-50 font-sans antialiased">
-      {/* Loading overlay */}
       <LoadingOverlay
         visible={hunter.status === 'loading' || hunter.status === 'analyzing'}
         progress={loadingProgress}
       />
 
-      {/* Navigation */}
       <nav className="bg-white shadow-sm sticky top-0 z-50 no-print">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
@@ -147,7 +128,6 @@ export default function App() {
         </div>
       </nav>
 
-      {/* Error banner */}
       {showError && (
         <div className="bg-red-50 border-b border-red-200 px-6 py-3 text-red-700 text-sm flex items-center justify-between">
           <span><i className="fa-solid fa-circle-exclamation mr-2" />{hunter.errorMessage}</span>
@@ -155,28 +135,23 @@ export default function App() {
         </div>
       )}
 
-      {/* Settings page (#/settings) */}
       {onSettings ? (
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <ApiKeySettings />
         </main>
       ) : (
         <>
-          {/* Main content */}
           <main
             className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8"
             style={{ display: showResult ? 'grid' : 'none' }}
           >
-            {/* Left sidebar */}
             <aside className="lg:col-span-3 space-y-6">
               {hunter.user && (
                 <UserCard user={hunter.user} stats={hunter.stats} academic={hunter.academic} orgs={hunter.orgs} />
               )}
             </aside>
 
-            {/* Main panel */}
             <div className="lg:col-span-9 flex flex-col main-panel">
-              {/* Tabs（路由驱动，可分享深链接） */}
               {routeUser && (
                 <div className="border-b border-neutral-200 mb-6 no-print">
                   <nav className="-mb-px flex space-x-8">
@@ -200,296 +175,16 @@ export default function App() {
                 </div>
               )}
 
-              {/* Tab: AI 画像 */}
               {activeTab === 'overview' && hunter.aiResult && (
-                <div className="space-y-6 animate-fade-in-up">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-white rounded-2xl shadow-sm border border-neutral-100 p-6">
-                      <h3 className="text-lg font-bold text-neutral-800 mb-4">能力五维评测</h3>
-                      <div style={{ height: 320 }}>
-                        <AbilityRadar scores={hunter.aiResult.radarScores} />
-                      </div>
-                    </div>
-                    <div className="bg-white rounded-2xl shadow-sm border border-neutral-100 p-6 flex flex-col">
-                      <h3 className="text-lg font-bold text-neutral-800 mb-4">综合评分</h3>
-                      <div className="flex-1 flex gap-4 flex-wrap items-center justify-center">
-                        <ScoreRing
-                          label="能力综合"
-                          score={hunter.codeCapability.overall}
-                          color="#1B2A4A"
-                          sub="不含影响力"
-                        />
-                        <ScoreRing
-                          label="影响力·触达"
-                          score={hunter.codeCapability.influence}
-                          color="#C9A24B"
-                          sub="Star + 关注者"
-                        />
-                        <ScoreRing
-                          label="活跃热度"
-                          score={hunter.activity.heatScore}
-                          color="#3b82f6"
-                          sub={hunter.activity.heatLevel}
-                        />
-                      </div>
-                      <div className="mt-5 pt-4 border-t border-neutral-100 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                        <Dim label="代码深度" v={hunter.codeCapability.depth} />
-                        <Dim label="技术广度" v={hunter.codeCapability.breadth} />
-                        <Dim label="协作" v={hunter.codeCapability.collaboration} />
-                        <Dim label="持续度" v={hunter.codeCapability.sustainability} />
-                      </div>
-                    </div>
-                  </div>
-                  <AnalysisPanel aiResult={hunter.aiResult} />
-                </div>
+                <OverviewTab hunter={hunter} />
               )}
 
-              {/* Tab: 统计指纹 */}
               {activeTab === 'tech' && (
-                <div className="space-y-6 animate-fade-in-up">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="bg-white rounded-2xl shadow-sm border border-neutral-100 p-6">
-                      <h3 className="text-md font-bold text-neutral-800 mb-4">代码量 Top 语言</h3>
-                      <LanguageDoughnut langs={hunter.langs} />
-                    </div>
-
-                    <div className="bg-white rounded-2xl shadow-sm border border-neutral-100 p-6 md:col-span-2">
-                      <h3 className="text-md font-bold text-neutral-800 mb-4">最近仓库客观指标</h3>
-                      <div className="grid grid-cols-2 gap-4">
-                        <StatCard
-                          title="总计被 Fork"
-                          value={formatNumber(hunter.stats.totalForks)}
-                          description="代码被他人复制并二次开发的量"
-                          icon={<i className="fa-solid fa-code-fork text-blue-500" />}
-                        />
-                        <StatCard
-                          title="开源协议意识"
-                          value={`${hunter.stats.licenseRatio}%`}
-                          description="为自己的原创项目配置 License 的比例"
-                          icon={<i className="fa-solid fa-scale-balanced text-green-500" />}
-                        />
-                        <StatCard
-                          title="未解决的 Issue"
-                          value={formatNumber(hunter.stats.totalIssues)}
-                          description="当前面临的外部待处理任务量"
-                          icon={<i className="fa-solid fa-triangle-exclamation text-orange-500" />}
-                        />
-                        <StatCard
-                          title="原创项目比重"
-                          value={`${hunter.stats.originalRatio}%`}
-                          description="排除纯粹 Fork 他人代码的仓库比例"
-                          icon={<i className="fa-solid fa-file-code text-purple-500" />}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Star 深度评估 */}
-                  <div className="bg-white rounded-2xl shadow-sm border border-neutral-100 p-6">
-                    <h3 className="text-md font-bold text-neutral-800 mb-4">
-                      <i className="fa-solid fa-star text-yellow-400 mr-2" />
-                      Star 深度评估
-                    </h3>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <StatCard
-                        title="Star 总量"
-                        value={formatNumber(hunter.starAnalysis.totalStars)}
-                        description="全部原创仓库 Stars 之和"
-                        icon={<i className="fa-solid fa-star text-yellow-400" />}
-                      />
-                      <StatCard
-                        title="头部仓库"
-                        value={formatNumber(hunter.starAnalysis.maxStars)}
-                        description="单个最高 Star 仓库"
-                        icon={<i className="fa-solid fa-trophy text-amber-500" />}
-                      />
-                      <StatCard
-                        title="年均增速"
-                        value={hunter.starAnalysis.velocityPerYear}
-                        description="Star / 账号年龄（年）"
-                        icon={<i className="fa-solid fa-chart-line text-green-500" />}
-                      />
-                      <StatCard
-                        title="头部集中度"
-                        value={`${Math.round(hunter.starAnalysis.topRepoShare * 100)}%`}
-                        description="头部仓库占 Star 总量比例"
-                        icon={<i className="fa-solid fa-layer-group text-indigo-500" />}
-                      />
-                    </div>
-                    <p className="text-sm text-neutral-500 mt-3">
-                      {hunter.starAnalysis.tier} · Star 中位数 {hunter.starAnalysis.medianStars}
-                    </p>
-                  </div>
-
-                  {/* 字节级语言分布 */}
-                  <div className="bg-white rounded-2xl shadow-sm border border-neutral-100 p-6">
-                    <h3 className="text-md font-bold text-neutral-800 mb-4">
-                      <i className="fa-solid fa-code text-brand-500 mr-2" />
-                      字节级语言分布（Top 仓库）
-                    </h3>
-                    <LanguageBytesBar langs={hunter.langBytes} />
-                  </div>
-
-                  {/* 方向 / 领域聚类 */}
-                  <div className="bg-white rounded-2xl shadow-sm border border-neutral-100 p-6">
-                    <h3 className="text-md font-bold text-neutral-800 mb-4">
-                      <i className="fa-solid fa-compass text-gold-500 mr-2" />
-                      方向 / 领域聚类
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {hunter.domains.length > 0 ? (
-                        hunter.domains.map(d => (
-                          <span
-                            key={d.name}
-                            className="px-3 py-1.5 bg-brand-50 text-brand-700 border border-brand-200 rounded-full text-sm font-medium"
-                          >
-                            {d.name}
-                            <span className="text-xs opacity-70 ml-1">权重 {d.weight}</span>
-                          </span>
-                        ))
-                      ) : (
-                        <span className="text-sm text-neutral-400">暂无明确方向聚类</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* 学术 + 组织 */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-white rounded-2xl shadow-sm border border-neutral-100 p-6">
-                      <h3 className="text-md font-bold text-neutral-800 mb-4">
-                        <i className="fa-solid fa-graduation-cap text-gold-600 mr-2" />
-                        学术背景
-                      </h3>
-                      {hunter.academic.isAcademic ? (
-                        <div className="space-y-2 text-sm text-neutral-600">
-                          {hunter.academic.institution && <p>机构：{hunter.academic.institution}</p>}
-                          {hunter.academic.links.map(l => (
-                            <a
-                              key={l.url}
-                              href={l.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="block text-brand-600 hover:underline break-all"
-                            >
-                              {l.label}：{l.url}
-                            </a>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-neutral-400">未检测到明确学术背景（ORCID / Scholar / .edu）</p>
-                      )}
-                    </div>
-                    <div className="bg-white rounded-2xl shadow-sm border border-neutral-100 p-6">
-                      <h3 className="text-md font-bold text-neutral-800 mb-4">
-                        <i className="fa-solid fa-people-group text-indigo-500 mr-2" />
-                        组织归属
-                      </h3>
-                      {hunter.orgs.length > 0 ? (
-                        <div className="space-y-2">
-                          {hunter.orgs.slice(0, 6).map(o => (
-                            <a
-                              key={o.login}
-                              href={o.html_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-2 text-sm text-neutral-700 hover:text-brand-600"
-                            >
-                              <img src={o.avatar_url} alt="" className="w-6 h-6 rounded" />
-                              <span className="font-medium">{o.login}</span>
-                              <span className="text-neutral-400 truncate">{o.description}</span>
-                            </a>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-neutral-400">未检测到显著组织归属</p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* 协作健康 / 组织健康（Bus / Elephant Factor） */}
-                  <div className="bg-white rounded-2xl shadow-sm border border-neutral-100 p-6">
-                    <h3 className="text-md font-bold text-neutral-800 mb-1 flex items-center">
-                      <i className="fa-solid fa-sitemap text-indigo-500 mr-2" />
-                      协作健康 / 组织健康
-                    </h3>
-                    <p className="text-xs text-neutral-400 mb-4">
-                      {hunter.contributionHealth.available
-                        ? `基于 GitHub GraphQL 精确贡献（近 1 年）+ 头部仓库贡献者分布`
-                        : '当前未鉴权：仅能基于公开事件粗略估计。配置 VITE_GITHUB_TOKEN 解锁精确分析'}
-                    </p>
-
-                    {hunter.contributionHealth.available ? (
-                      <>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                          <HealthStat
-                            title="Elephant Factor"
-                            value={hunter.contributionHealth.elephantFactor}
-                            desc="提交达 50% 所需仓库数（越大越分散）"
-                          />
-                          <HealthStat
-                            title="Bus Factor"
-                            value={hunter.contributionHealth.busFactor}
-                            desc="头部仓库贡献者中位数（越高越团队化）"
-                          />
-                          <HealthStat
-                            title="纯单人仓库"
-                            value={`${Math.round(hunter.contributionHealth.soloRatio * 100)}%`}
-                            desc="头部仓库仅作者一人占比"
-                          />
-                          <HealthStat
-                            title="集中度"
-                            value={`${Math.round(hunter.contributionHealth.concentration * 100)}%`}
-                            desc="提交分布 Gini 集中度"
-                          />
-                        </div>
-
-                        <div className="mb-2 text-xs text-neutral-500">
-                          近 1 年精确贡献：commit {hunter.graph.totalCommits} · 发起 PR {hunter.graph.totalPRs} · Review {hunter.graph.totalReviews} · Issue {hunter.graph.totalIssues}
-                        </div>
-
-                        {/* 集中度条 */}
-                        <div className="mb-4">
-                          <div className="flex justify-between text-xs text-neutral-500 mb-1">
-                            <span>提交集中度</span>
-                            <span>均匀 ←→ 集中</span>
-                          </div>
-                          <div className="h-2 bg-neutral-100 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-indigo-500"
-                              style={{ width: `${hunter.contributionHealth.concentration * 100}%` }}
-                            />
-                          </div>
-                        </div>
-
-                        {/* 逐仓贡献者条 */}
-                        <div>
-                          <p className="text-xs font-bold text-neutral-500 mb-2">头部仓库贡献者分布</p>
-                          <RepoContributorBars items={hunter.contributionHealth.repoContributors} />
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-sm text-neutral-400 space-y-2">
-                        <p>配置 <code className="bg-neutral-100 px-1 rounded">VITE_GITHUB_TOKEN</code> 后将解锁：</p>
-                        <ul className="list-disc list-inside text-neutral-500 space-y-1">
-                          <li>精确 commit / PR / Review / Issue 全量计数（近 1 年，替代事件估计）</li>
-                          <li>逐仓提交分布 → Elephant Factor 与集中度</li>
-                          <li>头部仓库贡献者数 → Bus Factor（抗关键人风险）</li>
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="bg-white rounded-2xl shadow-sm border border-neutral-100 p-6">
-                    <h3 className="text-md font-bold text-neutral-800 mb-4">技术活跃词云</h3>
-                    <SkillTags langs={hunter.langs} />
-                  </div>
-                </div>
+                <TechTab hunter={hunter} />
               )}
 
-              {/* Tab: 简历 */}
               {activeTab === 'resume' && hunter.user && hunter.aiResult && (
                 <div className="animate-fade-in-up">
-                  {/* Print button */}
                   <div className="flex justify-end mb-4 no-print">
                     <button
                       onClick={() => window.print()}
@@ -515,7 +210,6 @@ export default function App() {
             </div>
           </main>
 
-          {/* Empty state */}
           {!showResult && hunter.status === 'idle' && (
             <div className="max-w-7xl mx-auto px-4 py-20 text-center">
               <i className="fa-solid fa-magnifying-glass text-6xl text-neutral-300 mb-4" />
@@ -530,53 +224,6 @@ export default function App() {
           )}
         </>
       )}
-    </div>
-  );
-}
-
-function StatCard({ title, value, description, icon }: {
-  title: string; value: string | number; description: string; icon: React.ReactNode;
-}) {
-  return (
-    <div className="p-4 bg-neutral-50 rounded-lg border border-neutral-100">
-      <h4 className="font-bold text-sm text-neutral-800 mb-1 flex items-center gap-2">
-        {icon}
-        {title}
-      </h4>
-      <p className="text-2xl font-bold text-neutral-700">{value}</p>
-      <p className="text-xs text-neutral-500 mt-1">{description}</p>
-    </div>
-  );
-}
-
-function HealthStat({ title, value, desc }: { title: string; value: number | string; desc: string }) {
-  return (
-    <div className="p-4 bg-neutral-50 rounded-lg border border-neutral-100">
-      <h4 className="font-bold text-sm text-neutral-800 mb-1">{title}</h4>
-      <p className="text-2xl font-bold text-indigo-600">{value}</p>
-      <p className="text-xs text-neutral-500 mt-1">{desc}</p>
-    </div>
-  );
-}
-
-function RepoContributorBars({ items }: { items: { name: string; contributors: number; isFork: boolean; stars: number }[] }) {
-  const data = items.filter(r => r.contributors > 0);
-  if (data.length === 0) return <p className="text-sm text-neutral-400">头部仓库贡献者数据不足</p>;
-  const max = Math.max(1, ...data.map(r => r.contributors));
-  return (
-    <div className="space-y-2">
-      {data.map(r => (
-        <div key={r.name} className="flex items-center gap-2 text-xs">
-          <span className="w-36 truncate text-neutral-600" title={r.name}>{r.name}</span>
-          <div className="flex-1 h-3 bg-neutral-100 rounded overflow-hidden">
-            <div
-              className="h-full bg-emerald-500 rounded"
-              style={{ width: `${(r.contributors / max) * 100}%` }}
-            />
-          </div>
-          <span className="w-12 text-right text-neutral-500">{r.contributors}</span>
-        </div>
-      ))}
     </div>
   );
 }

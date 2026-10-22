@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildHeuristicAnalysis } from './gemini';
+import { buildHeuristicAnalysis } from './ai';
 import type { GeminiAnalysisPayload } from '../types';
 
 function base(over: Partial<GeminiAnalysisPayload> = {}): GeminiAnalysisPayload {

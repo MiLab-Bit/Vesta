@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { analyzeWithKey, buildHeuristicAnalysis } from './gemini';
+import { analyzeWithKey, buildHeuristicAnalysis } from './ai';
 import type { GeminiAnalysisPayload } from '../types';
 
 function payload(): GeminiAnalysisPayload {
@@ -20,47 +20,58 @@ function payload(): GeminiAnalysisPayload {
   };
 }
 
-function geminiText(): string {
+function narrativeText(): string {
   return JSON.stringify({
-    radarScores: [1, 2, 3, 4, 5],
     aiInfluenceLevel: 'X',
     aiInfluenceDesc: 'd',
     aiTechLevel: 'T',
     aiTechDesc: 't',
     aiRecommendation: 'r',
     resumeSummary: 's',
-    directions: ['a'],
-    codeCapabilityScore: 77,
-    heatScore: 88,
     aiCodeCapabilityNote: 'c',
     aiHeatNote: 'h',
     aiAcademicNote: 'ac',
     aiStarNote: 'st',
     aiOrgNote: 'o',
-    aiHealthNote: 'he',
   });
+}
+
+function mockFetch(text: string): void {
+  globalThis.fetch = vi.fn(async () => ({
+    ok: true,
+    json: async () => ({ candidates: [{ content: { parts: [{ text }] } }] }),
+  })) as unknown as typeof globalThis.fetch;
 }
 
 beforeEach(() => { vi.restoreAllMocks(); });
 
 describe('analyzeWithKey', () => {
-  it('maps gemini response to AiAnalysisResult', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ candidates: [{ content: { parts: [{ text: geminiText() }] } }] }),
-    }) as any;
+  it('uses deterministic metrics instead of LLM-supplied numbers', async () => {
+    mockFetch(narrativeText());
     const r = await analyzeWithKey(payload(), 'key');
-    expect(r.radarScores.depth).toBe(1);
+    expect(r.radarScores.depth).toBe(60);
+    expect(r.radarScores.influence).toBe(40);
+    expect(r.codeCapabilityScore).toBe(58);
+    expect(r.heatScore).toBe(50);
+    expect(r.directions).toEqual(['TS']);
     expect(r.aiInfluenceLevel).toBe('X');
-    expect(r.codeCapabilityScore).toBe(77);
+    expect(r.degraded).toBe(false);
   });
 
-  it('falls back to heuristic on failure', async () => {
-    global.fetch = vi.fn().mockRejectedValue(new Error('net'));
+  it('falls back to heuristic on network failure', async () => {
+    globalThis.fetch = vi.fn(async () => { throw new Error('net'); }) as unknown as typeof globalThis.fetch;
     const r = await analyzeWithKey(payload(), 'key');
     expect(r.aiInfluenceLevel).toContain('级');
     expect(r.codeCapabilityScore).toBe(58);
+    expect(r.degraded).toBe(true);
   }, 20000);
+
+  it('falls back to heuristic when narrative is missing fields', async () => {
+    mockFetch(JSON.stringify({ aiInfluenceLevel: 'X' }));
+    const r = await analyzeWithKey(payload(), 'key');
+    expect(r.degraded).toBe(true);
+    expect(r.codeCapabilityScore).toBe(58);
+  });
 });
 
 describe('buildHeuristicAnalysis exported', () => {

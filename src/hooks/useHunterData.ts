@@ -119,7 +119,6 @@ export function useHunterData() {
     const bestRepos = computeBestRepos(ownRepos, 4);
     const ageYears = computeAccountAge(user.created_at);
 
-    // 深度分析信号
     const events = eventsResult;
     const orgs = orgsResult;
     const starred = starredResult;
@@ -128,17 +127,13 @@ export function useHunterData() {
     const starAnalysis = computeStarAnalysis(repos, ageYears);
     const domains = computeDomainClusters(repos, starred);
 
-    // 逐仓字节级语言（最多 8 个仓库的额外请求，带缓存与降级）
     const langBytes = await fetchTopRepoLanguages(username, repos);
-    // 用近期主力语言字节分布补全活跃热度
     const recentLangBytes: Record<string, number> = {};
     langBytes.forEach(l => { recentLangBytes[l.name] = l.count; });
     activity.recentLangBytes = recentLangBytes;
 
-    // 真实贡献信号（来自公开事件，作为 GraphQL 缺失时的回退）
     const signals = computeContributionSignals(events, orgs);
 
-    // 精确贡献（GraphQL，需 token）+ 头部仓库贡献者数（Bus Factor）
     const [graph, repoContributors] = await Promise.all([
       fetchGraphContributions(username),
       fetchTopRepoContributorCounts(ownRepos, username),
@@ -157,7 +152,6 @@ export function useHunterData() {
       status: 'analyzing',
     }));
 
-    // 组装 LLM / 启发式输入
     const aiResult = await analyze({
       user, topRepos, stats, langs,
       orgs, academic, activity, starAnalysis, domains, langBytes, codeCapability,

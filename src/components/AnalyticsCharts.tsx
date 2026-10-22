@@ -15,7 +15,6 @@ import { Radar, Doughnut } from 'react-chartjs-2';
 import type { RadarScores, LanguageStat } from '../types';
 import { cn } from '../utils/helpers';
 
-// Register Chart.js components once
 ChartJS.register(
   RadialLinearScale,
   PointElement,
@@ -28,7 +27,6 @@ ChartJS.register(
   LinearScale
 );
 
-// ==================== Radar Chart ====================
 
 interface AbilityRadarProps {
   scores: RadarScores;
@@ -83,7 +81,6 @@ export function AbilityRadar({ scores }: AbilityRadarProps) {
   );
 }
 
-// ==================== Language Doughnut Chart ====================
 
 const LANG_COLORS = ['#3b82f6', '#eab308', '#06b6d4', '#f97316', '#8b5cf6', '#ec4899'];
 
@@ -133,7 +130,6 @@ export function LanguageDoughnut({ langs }: LanguageDoughnutProps) {
   );
 }
 
-// ==================== Skill Tags ====================
 
 interface SkillTagsProps {
   langs: LanguageStat[];
@@ -168,7 +164,6 @@ export function SkillTags({ langs, limit = 12 }: SkillTagsProps) {
   );
 }
 
-// ==================== Score Ring (heat / capability) ====================
 
 interface ScoreRingProps {
   label: string;
@@ -204,7 +199,6 @@ export function ScoreRing({ label, score, sub, color = '#C9A24B' }: ScoreRingPro
   );
 }
 
-// ==================== Language Bytes Bar ====================
 
 function formatBytes(n: number): string {
   if (n < 1024) return `${n} B`;

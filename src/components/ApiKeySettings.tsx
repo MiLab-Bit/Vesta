@@ -2,11 +2,6 @@ import { useEffect, useState } from 'react';
 import { getGeminiKey, setGeminiKey, clearGeminiKey, hasGeminiKey, getGeminiModel, setGeminiModel } from '../services/byok';
 import { remaining, QUOTA_LIMIT } from '../services/quota';
 
-/**
- * 浏览器端 BYOK 设置面板：用户输入自己的 Gemini Key（存 localStorage），
- * Key 仅留本地、直连 Google，平台不持有任何 LLM key，也无需服务端代理。
- * 挂在 #/settings 路由（HashRouter），nav 的「AI Key」入口导航至此。
- */
 export function ApiKeySettings() {
   const [key, setKey] = useState('');
   const [model, setModel] = useState('gemini-2.0-flash');
